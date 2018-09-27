@@ -1,5 +1,5 @@
 import uuid from 'uuid';
-import  database from '../../firebase/firebase'
+import  database from '../firebase/firebase'
 
 // ADD_EXPENSE
 export const addExpense = (expense) => ({
@@ -8,8 +8,8 @@ export const addExpense = (expense) => ({
 });
 
 export const startAddExpense = (expenseData = {}) => {
-  return (dispatch) => {
-    
+  return (dispatch, getState) => {
+    const uid = getState().auth.uid;
     const {
       description = '',
       note = '',
@@ -18,7 +18,7 @@ export const startAddExpense = (expenseData = {}) => {
     } = expenseData;
 
     const expense = { description, note, amount, createdAt };
-    return database.ref('expenses').push(expense).then((ref) => {
+    return database.ref(`users/${uid}/expenses`).push(expense).then((ref) => {
       dispatch(addExpense({
         id:  ref.key,
         ...expense
@@ -28,17 +28,19 @@ export const startAddExpense = (expenseData = {}) => {
 };
 
 export const startRemoveExpense = (data) => {
-  return (dispatch) => {
+  return (dispatch, getState) => {
+    const uid = getState().auth.uid;
     const { id } = data 
-    return database.ref(`expenses/${id}`).remove().then(() => {
+    return database.ref(`users/${uid}/expenses/${id}`).remove().then(() => {
       dispatch(removeExpense(data));
     })
   }
 }
 
 export const startEditExpense = (id, expense) => {
-  return (dispatch) => {
-    return database.ref(`expenses/${id}`)
+  return (dispatch, getState) => {
+    const uid = getState().auth.uid;
+    return database.ref(`users/${uid}/expenses/${id}`)
     .update(expense)
     .then(() => {
       dispatch(editExpense(id, expense));
@@ -66,9 +68,9 @@ export const setExpenses = (expenses) => ({
 });
 
 export const startSetExpenses = () => {
-  return (dispatch) => {
-
-    return database.ref('expenses').once('value', (snapshot) => {
+  return (dispatch, getState) => {
+    const uid = getState().auth.uid;
+    return database.ref(`users/${uid}/expenses`).once('value', (snapshot) => {
       const expensesToShow = []
       snapshot.forEach((child) => {
         expensesToShow.push({
